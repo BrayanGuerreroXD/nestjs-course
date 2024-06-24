@@ -91,4 +91,31 @@ export class UsersService {
             throw ErrorManager.createSignatureError(e.message);
         }
     }
+
+    public async removeUserFromProject(userId: string, projectId: string): Promise<DeleteResult | undefined> {
+        try {
+            if (!userId || !projectId)
+                throw new ErrorManager({
+                    type: "BAD_REQUEST",
+                    message: 'userId and projectId are required'
+                });
+
+            const userProject: DeleteResult = await this.userProjectRepository.createQueryBuilder()
+                .delete()
+                .from(UsersProjectsEntity)
+                .where('user_id = :userId', { userId })
+                .andWhere('project_id = :projectId', { projectId })
+                .execute();
+
+            if (userProject.affected === 0) 
+                throw new ErrorManager({
+                    type: "BAD_REQUEST",
+                    message: 'User not found in project'
+                });
+                
+            return userProject;
+        } catch (e) {
+            throw ErrorManager.createSignatureError(e.message);          
+        }
+    }
 }

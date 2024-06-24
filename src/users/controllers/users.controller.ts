@@ -40,4 +40,9 @@ export class UsersController {
         return await this.usersService.addUserToProject(body);
     }
 
+    @Delete("remove-from-project/:userId/:projectId")
+    public async removeUserFromProject(@Param('userId') userId: string, @Param('projectId') projectId: string) {
+        return await this.usersService.removeUserFromProject(userId, projectId);
+    }
+
 }
