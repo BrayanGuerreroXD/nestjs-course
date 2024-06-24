@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 import { UsersEntity } from '../entities/users.entity';
 import { UserDto, UserUpdateDto } from '../dto/user.dto';
+import { ErrorManager } from '../../utils/error.manager';
 
 @Injectable()
 export class UsersService {
@@ -19,26 +20,39 @@ export class UsersService {
         try {
             return await this.userReposirtory.save(body);
         } catch (e) {
-            throw new Error(e);            
+            throw ErrorManager.createSignatureError(e.message);          
         }
     }
     
     public async findUsers(): Promise<UsersEntity[]> {
         try {
-            return await this.userReposirtory.find();
+            const users : UsersEntity[] = await this.userReposirtory.find();
+            if (!users.length) {
+                throw new ErrorManager({
+                    type: "NO_CONTENT",
+                    message: 'Users not found'
+                });
+            }
+            return users;
         } catch (e) {
-            throw new Error(e);            
+            throw ErrorManager.createSignatureError(e.message);       
         }
     }
     
     public async findUserById(id: string): Promise<UsersEntity> {
         try {
-            return await this.userReposirtory
+            const user: UsersEntity =  await this.userReposirtory
                 .createQueryBuilder('user')
                 .where({ id })
                 .getOne();
+            if (!user) 
+                throw new ErrorManager({
+                    type: "NOT_FOUND",
+                    message: 'User not found'
+                });
+            return user;
         } catch (e) {
-            throw new Error(e);            
+            throw ErrorManager.createSignatureError(e.message);          
         }
     }
 
@@ -46,10 +60,13 @@ export class UsersService {
         try {
             const user: UpdateResult = await this.userReposirtory.update(id, body);
             if (user.affected === 0) 
-                throw new Error('User not found');
+                throw new ErrorManager({
+                    type: "BAD_REQUEST",
+                    message: 'User not found'
+                });
             return user;
         } catch (e) {
-            throw new Error(e);            
+            throw ErrorManager.createSignatureError(e.message);          
         }
     }
     
@@ -57,10 +74,13 @@ export class UsersService {
         try {
             const user: DeleteResult = await this.userReposirtory.delete(id);
             if (user.affected === 0) 
-                throw new Error('User not found');
+                throw new ErrorManager({
+                    type: "BAD_REQUEST",
+                    message: 'User not found'
+                });
             return user;
         } catch (e) {
-            throw new Error(e);            
+            throw ErrorManager.createSignatureError(e.message);          
         }
     }
 }
