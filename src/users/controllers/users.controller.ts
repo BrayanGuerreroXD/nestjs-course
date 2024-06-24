@@ -1,15 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
-import { UserDto, UserUpdateDto } from '../dto/user.dto';
+import { UserDto, UserToProjectsDto, UserUpdateDto } from '../dto/user.dto';
 
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
-    @Get("hello-cat")
-    getHelloCat(): string {
-        return this.usersService.getHelloCat();
-    }
+    // ============================== User Endpoints ==============================
 
     @Get()
     public async getUsers() {
@@ -36,5 +33,11 @@ export class UsersController {
         return await this.usersService.deleteUser(id);
     }
 
+    // ============================== User - Project Relation Endpoints ==============================
+
+    @Post("add-to-project")
+    public async addUserToProject(@Body() body: UserToProjectsDto) {
+        return await this.usersService.addUserToProject(body);
+    }
 
 }

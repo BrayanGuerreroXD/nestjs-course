@@ -38,7 +38,9 @@ export class ProjectsService {
     public async findProjectById(id: string): Promise<ProjectsEntity> {
         try {
             const project: ProjectsEntity = await this.projectReposirtory
-                .createQueryBuilder('Project')
+                .createQueryBuilder('project')
+                .leftJoinAndSelect('project.usersIncludes', 'usersIncludes')
+                .leftJoinAndSelect('usersIncludes.user', 'user')
                 .where({ id })
                 .getOne();
             if (!project) {
