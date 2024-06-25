@@ -5,18 +5,27 @@ import { UsersEntity } from '../entities/users.entity';
 import { UserDto, UserToProjectsDto, UserUpdateDto } from '../dto/user.dto';
 import { ErrorManager } from '../../utils/error.manager';
 import { UsersProjectsEntity } from '../entities/usersProjects.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
 
     constructor(
-        @InjectRepository(UsersEntity) private readonly userReposirtory: Repository<UsersEntity>,
+        @InjectRepository(UsersEntity) private readonly userRepository: Repository<UsersEntity>,
         @InjectRepository(UsersProjectsEntity) private readonly userProjectRepository: Repository<UsersProjectsEntity>,
     ) {}
 
     public async createUser(body: UserDto): Promise<UsersEntity> {
         try {
-            return await this.userReposirtory.save(body);
+            const newUser: UsersEntity = await this.userRepository.create(body);
+            console.log(newUser);
+            const newUserPassword = await bcrypt.hash(
+                newUser.password, 
+                (+process.env.HASH_SALT || 10) as number
+            );
+            console.log(newUserPassword);
+            newUser.password = newUserPassword;
+            return await this.userRepository.save(newUser);
         } catch (e) {
             throw ErrorManager.createSignatureError(e.message);          
         }
@@ -24,7 +33,7 @@ export class UsersService {
     
     public async findUsers(): Promise<UsersEntity[]> {
         try {
-            const users : UsersEntity[] = await this.userReposirtory.find();
+            const users : UsersEntity[] = await this.userRepository.find();
             if (!users.length) {
                 throw new ErrorManager({
                     type: "NO_CONTENT",
@@ -39,7 +48,7 @@ export class UsersService {
     
     public async findUserById(id: string): Promise<UsersEntity> {
         try {
-            const user: UsersEntity =  await this.userReposirtory
+            const user: UsersEntity =  await this.userRepository
                 .createQueryBuilder('user')
                 .leftJoinAndSelect('user.projectsIncludes', 'projectsIncludes')
                 .leftJoinAndSelect('projectsIncludes.project', 'project')
@@ -54,11 +63,24 @@ export class UsersService {
         } catch (e) {
             throw ErrorManager.createSignatureError(e.message);          
         }
+    }   
+
+    public async findBy({ key, value } : { key: keyof UserDto; value: any }) {
+        try {
+            const user: UsersEntity = await this.userRepository
+                .createQueryBuilder('user')
+                .addSelect('user.password')
+                .where({ [key]: value })
+                .getOne();
+            return user;
+        } catch (error) {
+            throw ErrorManager.createSignatureError(error.message);
+        }
     }
 
     public async updateUser(body: UserUpdateDto, id: string): Promise<UpdateResult | undefined> {
         try {
-            const user: UpdateResult = await this.userReposirtory.update(id, body);
+            const user: UpdateResult = await this.userRepository.update(id, body);
             if (user.affected === 0) 
                 throw new ErrorManager({
                     type: "BAD_REQUEST",
@@ -72,7 +94,7 @@ export class UsersService {
     
     public async deleteUser(id: string): Promise<DeleteResult | undefined> {
         try {
-            const user: DeleteResult = await this.userReposirtory.delete(id);
+            const user: DeleteResult = await this.userRepository.delete(id);
             if (user.affected === 0) 
                 throw new ErrorManager({
                     type: "BAD_REQUEST",
