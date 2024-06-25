@@ -3,15 +3,20 @@ import { UsersService } from '../services/users.service';
 import { UserDto, UserToProjectsDto, UserUpdateDto } from '../dto/user.dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { PublicAccess } from 'src/auth/decorators/public.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { AdminAccess } from 'src/auth/decorators/admin.decorator';
 
 @Controller('users')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
     // ============================== User Endpoints ==============================
 
     @Get()
+    // @Roles('ADMIN')
+    @AdminAccess()
     public async getUsers() {
         return await this.usersService.findUsers();
     }
