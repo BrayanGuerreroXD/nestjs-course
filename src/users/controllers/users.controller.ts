@@ -1,8 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { UserDto, UserToProjectsDto, UserUpdateDto } from '../dto/user.dto';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { PublicAccess } from 'src/auth/decorators/public.decorator';
 
 @Controller('users')
+@UseGuards(AuthGuard)
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
@@ -24,6 +27,7 @@ export class UsersController {
     }
 
     @Put(":id")
+    @PublicAccess()
     public async updateUser(@Body() body: UserUpdateDto, @Param('id') id: string) {
         return await this.usersService.updateUser(body, id);
     }
